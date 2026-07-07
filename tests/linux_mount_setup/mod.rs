@@ -115,7 +115,7 @@ pub fn get_password_provider() -> Box<dyn PasswordProvider> {
 }
 
 pub fn count_files(folder_path: &str) -> u32 {
-    println!("<<<[{}]>>>", &folder_path);
+    println!("<<<[{}]>>>", folder_path);
     let path = Path::new(folder_path);
     let mut file_count = 0;
     if let Ok(dir_iterator) = fs::read_dir(path) {
@@ -124,6 +124,6 @@ pub fn count_files(folder_path: &str) -> u32 {
             file_count += 1;
         }
     }
-    println!("<<< File count [{}] >>>", &file_count);
+    println!("<<< File count [{}] >>>", file_count);
     file_count
 }

@@ -57,13 +57,13 @@ fn it_create_and_rename_file() {
     let test_file2 = format!("{}{}", MOUNT_PATH, "/demo2.txt");
     {
         let fh = File::create_new(Path::new(&test_file1));
-        assert!(fh.is_ok(), "failed to create [{}]", &test_file1);
+        assert!(fh.is_ok(), "failed to create [{}]", test_file1);
         let rename = fs::rename(Path::new(&test_file1), Path::new(&test_file2));
         assert!(
             rename.is_ok(),
             " failed to rename [{}] into [{}]",
-            &test_file1,
-            &test_file2
+            test_file1,
+            test_file2
         );
     }
     // warning! remove does not guarantee immediate removal so this leaks inodes
@@ -87,22 +87,22 @@ fn it_create_write_rename_read_delete() {
         let mut content = String::new();
         // create folder
         let res = fs::create_dir(tf_path);
-        assert!(res.is_ok(), "failed to create [{}]", &test_folder);
+        assert!(res.is_ok(), "failed to create [{}]", test_folder);
         // create file 1
         let fh1 = File::create_new(f1_path);
-        assert!(fh1.is_ok(), "failed to create [{}]", &test_file1);
+        assert!(fh1.is_ok(), "failed to create [{}]", test_file1);
         let mut file_handle1 = fh1.unwrap();
         // write to file 1
         let bytes = &file_handle1.write_all(WRITTEN_TEXT.as_bytes());
-        assert!(bytes.is_ok(), "failed to write into [{}]", &test_file1);
+        assert!(bytes.is_ok(), "failed to write into [{}]", test_file1);
         // rename file 1 to renamed
         let rn_path = Path::new(&test_file1_renamed);
         let renamed = fs::rename(f1_path, rn_path);
         assert!(
             renamed.is_ok(),
             "failed to rename [{}] into [{}]",
-            &test_file1,
-            &test_file1_renamed
+            test_file1,
+            test_file1_renamed
         );
         // read contents from file 1 and replace on string
         let _ = &file_handle1.read_to_string(&mut content);
@@ -113,17 +113,17 @@ fn it_create_write_rename_read_delete() {
         assert!(
             bytes.is_ok(),
             "failed to write modified contents into [{}]",
-            &test_file1
+            test_file1
         );
         // create file 2
         let fh2 = File::create_new(f2_path);
-        assert!(fh2.is_ok(), "failed to create [{}]", &test_file2);
+        assert!(fh2.is_ok(), "failed to create [{}]", test_file2);
         let final_file_count = count_files("/tmp");
         // check there are no extra files in /tmp
         assert_eq!(initial_file_count, final_file_count);
     }
     let res = fs::remove_dir_all(Path::new(&test_folder));
-    assert!(res.is_ok(), "failed to delete [{}]", &test_folder);
+    assert!(res.is_ok(), "failed to delete [{}]", test_folder);
 }
 
 #[test]
@@ -133,9 +133,9 @@ fn it_create_empty_dir_check_attr() {
     let tfd_path = Path::new(&test_folder);
     {
         let res = fs::create_dir(tfd_path);
-        assert!(res.is_ok(), "failed to create [{}]", &test_folder);
+        assert!(res.is_ok(), "failed to create [{}]", test_folder);
         let res = fs::metadata(tfd_path);
-        assert!(res.is_ok(), "failed to read metadata on [{}]", &test_folder);
+        assert!(res.is_ok(), "failed to read metadata on [{}]", test_folder);
         let metadata = res.unwrap();
         assert!(metadata.is_dir());
         assert_eq!(metadata.size(), 0);
@@ -145,5 +145,5 @@ fn it_create_empty_dir_check_attr() {
         assert!(inode_exists.unwrap());
     }
     let res = fs::remove_dir_all(Path::new(&test_folder));
-    assert!(res.is_ok(), "failed to delete [{}]", &test_folder);
+    assert!(res.is_ok(), "failed to delete [{}]", test_folder);
 }
