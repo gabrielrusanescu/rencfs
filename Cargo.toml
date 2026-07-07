@@ -250,3 +250,8 @@ members = [
     ".",
     "rencfs-python"
 ]
+
+
+
+[patch.crates-io]
+rustix = { git = "https://github.com/rust-osdev/rustix", rev = "v1.1.4" }

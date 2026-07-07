@@ -1,10 +1,10 @@
-#!/bin/bash
+#!/bin/zsh
 
 set -e
 
 export CARGO_TERM_COLOR=always
-export RUSTFLAGS="-Dwarnings -A unused-imports"
-export RUSTDOCFLAGS="-Dwarnings -A unused-imports"
+export RUSTFLAGS="-Dwarnings"
+export RUSTDOCFLAGS="-Dwarnings"
 export RUST_TEST_THREADS=14
 export CARGO_BUILD_JOBS=14
 
@@ -12,8 +12,7 @@ cargo fmt --all
 
 cargo build --all-targets --all-features
 cargo build --release --all-targets --all-features
-cargo clippy --release --all-targets --fix --allow-dirty --allow-staged -- \
-    -A unused-imports
+cargo clippy --release --all-targets --fix --allow-dirty --allow-staged
 cargo fmt --all -- --check
 cargo check --all
 cargo clippy --all-targets --release -- \
@@ -36,8 +35,7 @@ cd java-bridge
 cargo fmt --all
 cargo build --all-targets --all-features
 cargo build --release --all-targets --all-features
-cargo clippy --release --all-targets --fix --allow-dirty --allow-staged -- \
-    -A unused-imports
+cargo clippy --release --all-targets --fix --allow-dirty --allow-staged
 cargo fmt --all -- --check
 cargo check --all
 cargo clippy --all-targets --release -- \
