@@ -244,3 +244,9 @@ assets = [
 ]
 [package.metadata.generate-rpm.requires]
 fuse3 = "*"
+
+[workspace]
+members = [
+    ".",
+    "rencfs-python"
+]

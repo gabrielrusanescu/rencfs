@@ -1,0 +1,24 @@
+use pyo3::prelude::*;
+
+pub mod types;
+pub mod fs;
+
+/// Returns the current version of the rencfs python bindings.
+#[pyfunction]
+fn version() -> PyResult<String> {
+    Ok(env!("CARGO_PKG_VERSION").to_string())
+}
+
+/// The entrypoint for the `rencfs` Python module.
+#[pymodule]
+fn rencfs(_py: Python, m: &PyModule) -> PyResult<()> {
+    m.add_function(wrap_pyfunction!(version, m)?)?;
+    
+    m.add_class::<types::FileType>()?;
+    m.add_class::<types::Cipher>()?;
+    m.add_class::<types::CreateFileAttr>()?;
+    m.add_class::<types::FileAttr>()?;
+    m.add_class::<fs::EncryptedFs>()?;
+    
+    Ok(())
+}
