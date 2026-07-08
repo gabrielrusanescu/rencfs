@@ -27,7 +27,10 @@ static TEST_RESOURCES: OnceLock<Arc<Mutex<TestResource>>> = OnceLock::new();
 
 impl TestResource {
     fn ensure_clean_environment() {
-        let _ = Command::new("fusermount").arg("-u").arg(MOUNT_PATH).status();
+        let _ = Command::new("fusermount")
+            .arg("-u")
+            .arg(MOUNT_PATH)
+            .status();
         let _ = fs::remove_dir_all(MOUNT_PATH);
         let _ = fs::remove_dir_all(DATA_PATH);
         let _ = fs::create_dir_all(MOUNT_PATH);
@@ -81,7 +84,7 @@ impl TestGuard {
 }
 
 // We removed the custom Drop implementation that was manually triggering teardown.
-// The OS handles the FUSE cleanup when the process exits, which is safer 
+// The OS handles the FUSE cleanup when the process exits, which is safer
 // than forcing a teardown during a potential panic or shutdown.
 
 struct TestPasswordProvider {}
