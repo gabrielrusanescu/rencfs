@@ -248,13 +248,10 @@ fuse3 = "*"
 [workspace]
 members = [
     ".",
-    "rencfs-python",
-    "java-bridge"
+    "rencfs-python"
 ]
 
-[workspace.dependencies]
-rustix = "1.1.4"
 
 
-[dev-dependencies]
-serial_test = "3.1.1"
+[patch.crates-io]
+rustix = { git = "https://github.com/rust-osdev/rustix", rev = "v1.1.4" }

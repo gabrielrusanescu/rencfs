@@ -1,4 +1,2 @@
 [build]
-rustflags = [
-  "-Zallow-features=rustc_attrs",
-]
+rustflags = ["--cfg", "rustix_use_libc"]

@@ -7,6 +7,7 @@ authors = ["Radu Marias <hello@xorio.rs>"]
 [lib]
 name = "rencfs"
 crate-type = ["cdylib"]
+doc = false
 
 [dependencies]
 pyo3 = { version = "0.21.0", features = ["extension-module", "anyhow", "macros"] }

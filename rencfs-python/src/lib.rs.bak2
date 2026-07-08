@@ -11,7 +11,7 @@ fn version() -> PyResult<String> {
 
 /// The entrypoint for the `rencfs` Python module.
 #[pymodule]
-fn rencfs(_py: Python<'_>, m: &Bound<'_, PyModule>) -> PyResult<()> {
+fn rencfs(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(version, m)?)?;
 
     m.add_class::<types::FileType>()?;

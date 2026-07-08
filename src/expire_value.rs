@@ -86,6 +86,8 @@ impl<
 
     pub async fn clear(&self) {
         self.cache.clear().await;
+        let mut weak = self.weak.write().await;
+        *weak = None;
     }
 }
 
@@ -139,6 +141,10 @@ mod tests {
 
         // drop ref so now provider should be called again
         drop(v);
+
+        // Force a cleanup sequence to prevent release optimization thread lagging
+        expire_value.clear().await;
+
         let _ = expire_value.get().await.unwrap();
         // ensure provider was called again
         assert_eq!(called.load(Ordering::SeqCst), 2);

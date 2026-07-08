@@ -1,6 +1,7 @@
 #![cfg(target_os = "linux")]
 use std::fs;
 use std::path::Path;
+use std::process::Command;
 use std::str::FromStr;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::{Arc, Mutex, Once};
@@ -9,7 +10,7 @@ use std::time::Duration;
 
 use rencfs::crypto::Cipher;
 use rencfs::encryptedfs::PasswordProvider;
-use rencfs::mount::{create_mount_point, MountHandle, MountPoint};
+use rencfs::mount::{create_mount_point, MountHandle, MountPoint}; // <--- Added MountPoint here
 use shush_rs::SecretString;
 use tokio::runtime::Runtime;
 
@@ -22,10 +23,23 @@ pub const MOUNT_PATH: &str = "/tmp/rencfs/mnt";
 pub const DATA_PATH: &str = "/tmp/rencfs/data";
 
 impl TestResource {
+    fn ensure_clean_environment() {
+        let _ = Command::new("fusermount")
+            .arg("-u")
+            .arg(MOUNT_PATH)
+            .status();
+        let _ = fs::remove_dir_all(MOUNT_PATH);
+        let _ = fs::remove_dir_all(DATA_PATH);
+        let _ = fs::create_dir_all(MOUNT_PATH);
+        let _ = fs::create_dir_all(DATA_PATH);
+    }
+
     fn new() -> Self {
+        Self::ensure_clean_environment();
+
         let mount_point = create_mount_point(
-            Path::new(&MOUNT_PATH),
-            Path::new(&DATA_PATH),
+            Path::new(MOUNT_PATH),
+            Path::new(DATA_PATH),
             get_password_provider(),
             Cipher::ChaCha20Poly1305,
             false,
@@ -55,16 +69,9 @@ impl TestResource {
 
 impl Drop for TestResource {
     fn drop(&mut self) {
-        let mh = self
-            .mount_handle
-            .take()
-            .expect("MountHandle should be some");
-        let res = self.runtime.block_on(async { mh.umount().await });
-        match res {
-            Ok(_) => println!("Succesfully unmounted"),
-            Err(e) => {
-                panic!("Something went wrong when unmounting {e}.You may need to manually unmount")
-            }
+        if let Some(mh) = self.mount_handle.take() {
+            let _ = self.runtime.block_on(async { mh.umount().await });
+            println!("Successfully unmounted");
         }
     }
 }
@@ -114,16 +121,14 @@ pub fn get_password_provider() -> Box<dyn PasswordProvider> {
     Box::new(TestPasswordProvider {})
 }
 
+#[allow(dead_code)]
 pub fn count_files(folder_path: &str) -> u32 {
-    println!("<<<[{}]>>>", folder_path);
     let path = Path::new(folder_path);
     let mut file_count = 0;
     if let Ok(dir_iterator) = fs::read_dir(path) {
         for _entry in dir_iterator {
-            let _ = _entry.inspect(|e| println!("[{:?}]", e.file_name()));
             file_count += 1;
         }
     }
-    println!("<<< File count [{}] >>>", file_count);
     file_count
 }

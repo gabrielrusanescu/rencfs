@@ -231,9 +231,7 @@ impl SetFileAttr {
             flags,
         }
     }
-}
 
-impl SetFileAttr {
     pub fn into_rust(&self) -> RustSetFileAttr {
         let to_system_time = |opt: Option<u64>| {
             opt.map(|secs| std::time::UNIX_EPOCH + std::time::Duration::from_secs(secs))
