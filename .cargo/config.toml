@@ -1,2 +1,5 @@
 [build]
 rustflags = ["--cfg", "rustix_use_libc"]
+
+[env]
+PYO3_USE_ABI3_FORWARD_COMPATIBILITY = "1"
