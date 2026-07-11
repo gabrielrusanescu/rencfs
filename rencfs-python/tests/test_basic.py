@@ -29,7 +29,8 @@ def test_encryptedfs_create(test_dir):
 def test_encryptedfs_read_write(test_dir):
     fs = EncryptedFs(test_dir, "my_secure_password", Cipher.Aes256Gcm, False)
     attr = CreateFileAttr(FileType.RegularFile, 0o644, 1000, 1000)
-    ino, _ = fs.create(1, "data.txt", attr, True, True)
+    handle, ret_attr = fs.create(1, "data.txt", attr, True, True)
+    ino = ret_attr.ino
 
     # Open for write
     fh = fs.open(ino, False, True)

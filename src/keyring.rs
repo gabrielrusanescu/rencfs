@@ -17,7 +17,7 @@ pub(crate) fn save(password: &SecretString, suffix: &str) -> Result<(), keyring:
 #[allow(dead_code)]
 pub(crate) fn remove(suffix: &str) -> Result<(), keyring::Error> {
     let entry = Entry::new(KEYRING_SERVICE, &format!("{KEYRING_USER}.{suffix}"))?;
-    entry.delete_password()
+    entry.delete_credential()
 }
 
 #[allow(dead_code)]

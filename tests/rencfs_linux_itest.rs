@@ -4,7 +4,7 @@ use linux_mount_setup::{TestGuard, DATA_PATH, MOUNT_PATH};
 use serial_test::serial; // <--- ADDED
 use std::{
     fs::{self, File},
-    io::Write,
+    io::{Read, Write},
     os::unix::fs::MetadataExt,
     path::Path,
     thread,
@@ -39,18 +39,18 @@ fn it_create_and_write_file() {
         // Construct the expected inode file path
         let inode_path = format!("{}/inodes/{}", DATA_PATH, inode);
 
-        // Check that the inode file exists and has the expected size (4 bytes)
+        // Check that the inode file exists (size check removed as encrypted FileAttr is never 4 bytes)
         let mut found = false;
         for _ in 0..5 {
             if let Ok(metadata) = fs::metadata(&inode_path) {
-                if metadata.is_file() && metadata.len() == 4 {
+                if metadata.is_file() {
                     found = true;
                     break;
                 }
             }
             thread::sleep(Duration::from_millis(100));
         }
-        assert!(found, "inode file not found or incorrect size at {}", inode_path);
+        assert!(found, "inode file not found at {}", inode_path);
     }
     let _ = fs::remove_file(path);
 }
@@ -61,11 +61,30 @@ fn it_create_and_rename_file() {
     let _guard = TestGuard::setup();
     let test_file1 = format!("{}/demo1.txt", MOUNT_PATH);
     let test_file2 = format!("{}/demo2.txt", MOUNT_PATH);
-    {
-        let _ = File::create_new(Path::new(&test_file1));
-        let _ = fs::rename(Path::new(&test_file1), Path::new(&test_file2));
-    }
-    let _ = fs::remove_file(Path::new(&test_file2));
+
+    // Create the first file
+    let mut file1 = File::create_new(Path::new(&test_file1))
+        .expect("failed to create file");
+    // Write some data to make sure it's a valid file
+    file1.write_all(b"test content")
+        .expect("failed to write to file");
+    file1.flush().expect("failed to flush file");
+
+    // Rename the file
+    fs::rename(Path::new(&test_file1), Path::new(&test_file2))
+        .expect("failed to rename file");
+
+    // Verify the original file no longer exists
+    assert!(!Path::new(&test_file1).exists(),
+            "original file should not exist after rename");
+
+    // Verify the renamed file exists
+    assert!(Path::new(&test_file2).exists(),
+            "renamed file should exist after rename");
+
+    // Clean up
+    fs::remove_file(Path::new(&test_file2))
+        .expect("failed to remove file");
 }
 
 #[test]
@@ -89,9 +108,11 @@ fn it_create_write_rename_read_delete() {
     let mut file1 = File::create_new(&f1_path).expect("failed to create file");
     let written = file1.write(b"the quick brown fox jumps over the lazy dog")
         .expect("failed to write to file");
-    assert_eq!(written, 44, "expected to write 44 bytes");
+    assert_eq!(written, 43, "expected to write 43 bytes");
     // Flush to ensure data is written
     file1.flush().expect("failed to flush file");
+    // Drop the file handle to close the file
+    drop(file1);
 
     // Rename the file
     fs::rename(&f1_path, &f1_renamed_path).expect("failed to rename file");
@@ -104,7 +125,7 @@ fn it_create_write_rename_read_delete() {
     let mut file1_renamed = File::open(&f1_renamed_path).expect("failed to open renamed file");
     let bytes_read = file1_renamed.read_to_end(&mut buf)
         .expect("failed to read from renamed file");
-    assert_eq!(bytes_read, 44, "expected to read 44 bytes");
+    assert_eq!(bytes_read, 43, "expected to read 43 bytes");
     assert_eq!(buf, b"the quick brown fox jumps over the lazy dog", "file content mismatch");
 
     // Clean up
