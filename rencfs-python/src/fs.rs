@@ -1,4 +1,5 @@
 use pyo3::prelude::*;
+use pyo3::types::PyBytes;
 use std::path::PathBuf;
 use std::sync::Arc;
 use tokio::runtime::Runtime;
@@ -145,7 +146,12 @@ impl EncryptedFs {
         }
     }
 
-    fn read(&self, ino: u64, offset: u64, size: usize, handle: u64) -> PyResult<Vec<u8>> {
+    fn read(&self, py: Python, ino: u64, offset: u64, size: usize, handle: u64) -> PyResult<PyObject> {
+        // Get the file attributes to determine the available bytes from offset
+        let attr = self.get_attr(ino)?;
+        let available = attr.size.saturating_sub(offset);
+        let size = size.min(available as usize);
+
         let mut buf = vec![0u8; size];
         let result = self
             .rt
@@ -153,7 +159,8 @@ impl EncryptedFs {
         match result {
             Ok(read_len) => {
                 buf.truncate(read_len);
-                Ok(buf)
+                let bytes = PyBytes::new(py, &buf);
+                Ok(bytes.into())
             }
             Err(e) => Err(PyFsError(e).into()),
         }

@@ -205,14 +205,14 @@ pub struct SetFileAttr {
 #[pymethods]
 impl SetFileAttr {
     #[new]
-    #[pyo3(signature = (size=None, atime=None, mtime=None, ctime=None, crtime=None, pattr=None, uid=None, gid=None, rdev=None, flags=None))]
+    #[pyo3(signature = (size=None, atime=None, mtime=None, ctime=None, crtime=None, perm=None, uid=None, gid=None, rdev=None, flags=None))]
     fn new(
         size: Option<u64>,
         atime: Option<u64>,
         mtime: Option<u64>,
         ctime: Option<u64>,
         crtime: Option<u64>,
-        pattr: Option<u16>,
+        perm: Option<u16>,
         uid: Option<u32>,
         gid: Option<u32>,
         rdev: Option<u32>,
@@ -224,7 +224,7 @@ impl SetFileAttr {
             mtime,
             ctime,
             crtime,
-            perm: pattr,
+            perm,
             uid,
             gid,
             rdev,

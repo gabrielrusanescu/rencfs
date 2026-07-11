@@ -9,7 +9,7 @@ use std::time::Duration;
 
 use rencfs::crypto::Cipher;
 use rencfs::encryptedfs::PasswordProvider;
-use rencfs::mount::{create_mount_point, MountHandle, MountPoint};
+use rencfs::mount::{create_mount_point, MountHandle, MountPoint, umount};
 use shush_rs::SecretString;
 use tokio::runtime::Runtime;
 
@@ -27,6 +27,13 @@ static TEST_RESOURCES: OnceLock<Arc<Mutex<TestResource>>> = OnceLock::new();
 
 impl TestResource {
     fn ensure_clean_environment() {
+        // Try to unmount using the library function first
+        let _ = umount(MOUNT_PATH);
+        // Fallback to fusermount3 and fusermount if the above fails
+        let _ = Command::new("fusermount3")
+            .arg("-u")
+            .arg(MOUNT_PATH)
+            .status();
         let _ = Command::new("fusermount")
             .arg("-u")
             .arg(MOUNT_PATH)

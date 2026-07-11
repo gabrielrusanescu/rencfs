@@ -20,12 +20,11 @@ def test_encryptedfs_create(test_dir):
     
     # ROOT_INO is typically 1. We create a file under root.
     attr = CreateFileAttr(FileType.RegularFile, 0o644, 1000, 1000)
-    ino, ret_attr = fs.create(1, "testfile.txt", attr, True, True)
-    
-    assert ino > 1
-    assert ret_attr.ino == ino
-    assert fs.exists(ino)
-    assert fs.is_file(ino)
+    handle, ret_attr = fs.create(1, "testfile.txt", attr, True, True)
+
+    assert ret_attr.ino > 1
+    assert fs.exists(ret_attr.ino)
+    assert fs.is_file(ret_attr.ino)
 
 def test_encryptedfs_read_write(test_dir):
     fs = EncryptedFs(test_dir, "my_secure_password", Cipher.Aes256Gcm, False)

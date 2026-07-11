@@ -5,6 +5,7 @@ use serial_test::serial; // <--- ADDED
 use std::{
     fs::{self, File},
     io::Write,
+    os::unix::fs::MetadataExt,
     path::Path,
     thread,
     time::Duration,
@@ -25,25 +26,31 @@ fn it_create_and_write_file() {
     let test_file = format!("{}/demo.txt", MOUNT_PATH);
     let path = Path::new(&test_file);
     {
-        let res = File::create_new(path);
-        assert!(res.is_ok(), "failed to create [{}]", res.err().unwrap());
-        let _ = res.unwrap().write_all(b"test");
+        let mut file = File::create_new(path).expect("failed to create file");
+        let write_result = file.write_all(b"test");
+        assert!(write_result.is_ok(), "failed to write to file");
+        // Flush to ensure data is written
+        file.flush().expect("failed to flush file");
 
-        let metadata = fs::metadata(path).expect("failed to retrieve metadata");
-        assert!(metadata.is_file());
+        // Get the inode of the file
+        let metadata = file.metadata().expect("failed to get metadata");
+        let inode = metadata.ino();
 
-        let inode_dir = format!("{}/inodes/", DATA_PATH);
+        // Construct the expected inode file path
+        let inode_path = format!("{}/inodes/{}", DATA_PATH, inode);
+
+        // Check that the inode file exists and has the expected size (4 bytes)
         let mut found = false;
-        for _ in 0..50 {
-            if let Ok(dir) = fs::read_dir(&inode_dir) {
-                if dir.count() > 0 {
+        for _ in 0..5 {
+            if let Ok(metadata) = fs::metadata(&inode_path) {
+                if metadata.is_file() && metadata.len() == 4 {
                     found = true;
                     break;
                 }
             }
-            thread::sleep(Duration::from_millis(200));
+            thread::sleep(Duration::from_millis(100));
         }
-        assert!(found, "No inode file was created in the data folder");
+        assert!(found, "inode file not found or incorrect size at {}", inode_path);
     }
     let _ = fs::remove_file(path);
 }
@@ -72,16 +79,36 @@ fn it_create_write_rename_read_delete() {
 
     let tf_path = Path::new(&test_folder);
     let f1_path = Path::new(&test_file1);
+    let f1_renamed_path = Path::new(&test_file1_renamed);
     let f2_path = Path::new(&test_file2);
 
-    let _ = fs::create_dir(tf_path);
-    let mut file_handle1 = File::create_new(f1_path).unwrap();
-    let _ = file_handle1.write_all(b"the quick brown fox jumps over the lazy dog");
+    // Create directory
+    fs::create_dir_all(&tf_path).expect("failed to create directory");
 
-    let _ = fs::rename(f1_path, Path::new(&test_file1_renamed));
-    let _ = File::create_new(f2_path);
+    // Create and write to first file
+    let mut file1 = File::create_new(&f1_path).expect("failed to create file");
+    let written = file1.write(b"the quick brown fox jumps over the lazy dog")
+        .expect("failed to write to file");
+    assert_eq!(written, 44, "expected to write 44 bytes");
+    // Flush to ensure data is written
+    file1.flush().expect("failed to flush file");
 
-    let _ = fs::remove_dir_all(tf_path);
+    // Rename the file
+    fs::rename(&f1_path, &f1_renamed_path).expect("failed to rename file");
+
+    // Create second file
+    let _file2 = File::create_new(&f2_path).expect("failed to create second file");
+
+    // Read back the renamed file to ensure data integrity
+    let mut buf = Vec::new();
+    let mut file1_renamed = File::open(&f1_renamed_path).expect("failed to open renamed file");
+    let bytes_read = file1_renamed.read_to_end(&mut buf)
+        .expect("failed to read from renamed file");
+    assert_eq!(bytes_read, 44, "expected to read 44 bytes");
+    assert_eq!(buf, b"the quick brown fox jumps over the lazy dog", "file content mismatch");
+
+    // Clean up
+    fs::remove_dir_all(&tf_path).expect("failed to remove directory");
 }
 
 #[test]
